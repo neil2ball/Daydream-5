@@ -10,22 +10,25 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Collections;
+import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity {
 
-    List<List<Byte[]>> fantasy5Numbers = new ArrayList();
-    List<Byte> numbersList = new ArrayList();
-    List<List<Boolean>> pickTrackerList = new ArrayList();
-    List<String> pickStrings = new ArrayList();
+    List<List<Byte[]>> fantasy5Numbers = new ArrayList<>();
+    List<Byte> numbersList = new ArrayList<>();
+    List<List<Boolean>> pickTrackerList = new ArrayList<>();
+    List<String> pickStrings = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 
-        shuffleByteList(numbersList);
+        numbersList = shuffleByteList();
 
         createPickTracker(pickTrackerList);
 
         fantasy5Numbers = csvReader("file.csv");
+
+        sortPicks();
 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
@@ -33,13 +36,13 @@ public class MainActivity extends AppCompatActivity {
 
     //https://www.stackchief.com/blog/How%20to%20read%20a%20CSV%20file%20in%20Java%20%7C%20with%20examples
     protected List<List<Byte[]>> csvReader (String fileName) {
-        List<List<Byte[]>> listsList = new ArrayList();
-        List<Byte[]> lines = new ArrayList();
+        List<List<Byte[]>> listsList = new ArrayList<>();
+        List<Byte[]> lines = new ArrayList<>();
 
-        List<Byte[]> set0 = new ArrayList();
-        List<Byte[]> set1 = new ArrayList();
-        List<Byte[]> set2 = new ArrayList();
-        List<Byte[]> set3 = new ArrayList();
+        List<Byte[]> set0 = new ArrayList<>();
+        List<Byte[]> set1 = new ArrayList<>();
+        List<Byte[]> set2 = new ArrayList<>();
+        List<Byte[]> set3 = new ArrayList<>();
         String delimiter = ",";
         String line;
         try (BufferedReader br =
@@ -92,12 +95,14 @@ public class MainActivity extends AppCompatActivity {
         return listsList;
     }
 
-    protected void shuffleByteList (List<Byte> picksListToShuffle) {
+    protected List<Byte> shuffleByteList () {
+        List<Byte> picksListToShuffle;
         Byte[] picks = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18,
                 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36};
         //https://www.digitalocean.com/community/tutorials/shuffle-array-java
         picksListToShuffle = Arrays.asList(picks);
         Collections.shuffle(picksListToShuffle);
+        return picksListToShuffle;
     }
 
     protected void createPickTracker (List<List<Boolean>> pickTrackerList) {
@@ -119,20 +124,20 @@ public class MainActivity extends AppCompatActivity {
 
         while (fantasy5Numbers.size() > 0) {
             for (byte w = 0; w < fantasy5Numbers.size(); w++) { //maximum of 4 lists. We rotate through these lists to evenly distribute the picks among the colored groupings.
-                Boolean breakFlag = false; //we must break out of the nested loops when we make a pick.
+                boolean breakFlag = false; //we must break out of the nested loops when we make a pick.
                 for (int x = 0; x < fantasy5Numbers.get(w).size(); x++) { //maximum 26244 picks per list
 
                         for (byte y = 0; y < pickTrackerList.get(0).size(); y++) { //maximum 36 numbers; tracks whether a specific number was used (in the first [of five] lists)
                             if (pickTrackerList.get(0).get(y)) { //Use the first list to find what numbers we have not used yet; the attempt is to create a lottery wheel.
                                 for (byte z=0; z < fantasy5Numbers.get(w).get(x).length; z++) { //max of 5 numbers per pick
 
-                                    if (numbersList.get(y) == fantasy5Numbers.get(w).get(x)[z]) { //if the needed number is contained in the pick
+                                    if (numbersList.get(y).equals(fantasy5Numbers.get(w).get(x)[z])) { //if the needed number is contained in the pick
                                         //We need to know the address of each pick. That way we can randomize each number in the picks and keep track of their uses.
                                         Byte[] picksIndex = new Byte[5];
 
                                         for (byte a = 0; a < fantasy5Numbers.get(w).get(x).length; a++) { //For each number in the pick
                                             for (byte b = 0; b < numbersList.size(); b++) { //for each address of each number in the list of possible numbers
-                                                if (fantasy5Numbers.get(w).get(x)[a] == numbersList.get(b)) { //if the number in the pick matches the number in the possibility list
+                                                if (fantasy5Numbers.get(w).get(x)[a].equals(numbersList.get(b))) { //if the number in the pick matches the number in the possibility list
                                                     picksIndex[a] = b; //match the number in the pick with the address of the number in the possibility list for use in comparing to the pick tracker lists
                                                 }
                                             }
@@ -169,22 +174,18 @@ public class MainActivity extends AppCompatActivity {
                                                 pickTrackerListIndex[4] != -1) {
 
                                             try {
-                                                String pickString = new String(); //We are going to save the strings in a list for use in creating the qr codes.
-
+                                                StringBuilder pickString = new StringBuilder(); //We are going to save the strings in a list for use in creating the qr codes.
+                                                //https://stackoverflow.com/questions/48872155/string-concatenation-in-loop
+                                                String pickNumberString;
                                                 for (byte f = 0; f < fantasy5Numbers.get(w).get(x).length; f++) {
-                                                    String pickNumberString = String.format("%02d",fantasy5Numbers.get(w).get(x)[f]); //We need to make the bytes two digits no matter what.
+                                                    pickNumberString = String.format(Locale.US,"%02d",fantasy5Numbers.get(w).get(x)[f]); //We need to make the bytes two digits no matter what.
                                                     //We start with bytes to attempt to save memory.
 
-                                                    if (f == 0) {
-                                                        pickString = pickNumberString; //assign the values as a string
-                                                    }
-                                                    else {
-                                                        pickString += pickNumberString; //append the values as a string
-                                                    }
+                                                    pickString.append(pickNumberString); //append the values as a string
 
                                                 }
 
-                                                pickStrings.add(pickString); //add the string of the numbers in the pick to the list of picks
+                                                pickStrings.add(pickString.toString()); //add the string of the numbers in the pick to the list of picks
                                                 fantasy5Numbers.get(w).remove(x); //remove the pick from the list of picks. This is how we keep track of when to stop using the lists.
 
                                                 if (fantasy5Numbers.get(w).size() == 0) {
@@ -197,9 +198,7 @@ public class MainActivity extends AppCompatActivity {
 
                                                 breakFlag = true;
 
-                                                if (breakFlag) {
-                                                    break; //break out of this loop so that we can break out of the outer loops.
-                                                }
+                                                break; //break out of this loop so that we can break out of the outer loops.
                                             }
                                             catch (Exception e) {
 
@@ -213,7 +212,7 @@ public class MainActivity extends AppCompatActivity {
                                 }
                             }
                             else if (y == pickTrackerList.get(0).size() - 1) { //This is used when there are no remaining picks in the first pick tracker list.
-                                List<List<Boolean>> pickTrackerBuffer = new ArrayList();
+                                List<List<Boolean>> pickTrackerBuffer = new ArrayList<>();
 
                                 createPickTracker(pickTrackerBuffer); //This creates a fresh tracker list.
 
