@@ -23,6 +23,8 @@ import androidmads.library.qrgenearator.QRGEncoder;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -173,7 +175,7 @@ public class MainActivity extends AppCompatActivity {
         String delimiter = ",";
         String line;
         try (BufferedReader br =
-                     new BufferedReader(new FileReader(fileName))) {
+                     new BufferedReader(new InputStreamReader(getAssets().open(fileName)))) {
             while((line = br.readLine()) != null){
                 String[] lineArray = line.split(delimiter);
                 Byte[] byteArray = new Byte[lineArray.length];
