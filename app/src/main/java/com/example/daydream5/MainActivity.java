@@ -10,7 +10,7 @@ import android.widget.RadioButton;
 import android.widget.Switch;
 
 import android.graphics.Bitmap;
-import android.graphics.Point;
+import android.graphics.Color;
 
 import android.text.TextUtils;
 
@@ -18,19 +18,24 @@ import android.util.Log;
 
 import android.view.View;
 
-import androidmads.library.qrgenearator.QRGContents;
-import androidmads.library.qrgenearator.QRGEncoder;
-
 import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Collections;
 import java.util.Locale;
+import java.util.HashMap;
+import java.util.Map;
 
+import com.google.zxing.BarcodeFormat;
+import com.google.zxing.EncodeHintType;
+import com.google.zxing.MultiFormatWriter;
+import com.google.zxing.WriterException;
+import com.google.zxing.common.BitMatrix;
+import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel;
 public class MainActivity extends AppCompatActivity {
 
     private ImageView qrCodeIV;
@@ -40,7 +45,6 @@ public class MainActivity extends AppCompatActivity {
     private Switch ezMatchSwitch;
 
     Bitmap bitmap;
-    QRGEncoder qrgEncoder;
 
     private EditText dataEdtDays;
     private EditText dataEdtPlays;
@@ -157,7 +161,13 @@ public class MainActivity extends AppCompatActivity {
 
                 qrStringMaker();
 
-                qrMaker(qrCodeIV, playStrings.get(0));
+                try {
+                    qrMaker(qrCodeIV, playStrings.get(0));
+                } catch (UnsupportedEncodingException e) {
+                    throw new RuntimeException(e);
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
 
             }
         });
@@ -308,10 +318,10 @@ public class MainActivity extends AppCompatActivity {
                                                 //https://stackoverflow.com/questions/48872155/string-concatenation-in-loop
                                                 String pickNumberString;
                                                 for (byte f = 0; f < fantasy5Numbers.get(w).get(x).length; f++) {
-                                                    pickNumberString = String.format(Locale.US, "%02d", fantasy5Numbers.get(w).get(x)[f]); //We need to make the bytes two digits no matter what.
+                                                    pickNumberString = String.format(Locale.US, "%02d", fantasy5Numbers.get(w).get(x)[f]).trim(); //We need to make the bytes two digits no matter what.
                                                     //We start with bytes to attempt to save memory.
 
-                                                    pickString.append(pickNumberString); //append the values as a string
+                                                    pickString.append(pickNumberString.trim()); //append the values as a string
 
                                                 }
 
@@ -365,29 +375,33 @@ public class MainActivity extends AppCompatActivity {
         fantasy5Numbers.clear();
     }
 
-    protected void qrMaker (ImageView qrCodeIV, String dataEdt) {
-        // creating a variable for point which
-        // is to be displayed in QR Code.
-        Point point = new Point();
+    protected void qrMaker (ImageView qrCodeIV, String dataEdt) throws UnsupportedEncodingException, WriterException {
 
-        // getting width and
-        // height of a point
-        int width = point.x;
-        int height = point.y;
+        Map<EncodeHintType, Object> hints = new HashMap<>();
+        hints.put(EncodeHintType.MARGIN, 0);
+        hints.put(EncodeHintType.ERROR_CORRECTION, ErrorCorrectionLevel.L);
+        hints.put(EncodeHintType.CHARACTER_SET, "ISO-2022-JP");
+        //hints.put(EncodeHintType.QR_MASK_PATTERN, 7);
 
-        // generating dimension from width and height.
-        int dimen = Math.min(width, height);
-        dimen = dimen * 3 / 4;
 
-        // setting this dimensions inside our qr code
-        // encoder to generate our qr code.
-        qrgEncoder = new QRGEncoder(dataEdt, null, QRGContents.Type.TEXT, dimen);
+        BitMatrix matrix = new MultiFormatWriter().encode(
+                new String(dataEdt.getBytes(), "ISO-2022-JP"),
+                BarcodeFormat.QR_CODE, 25, 25, hints);
+
         try {
-            // getting our qrcode in the form of bitmap.
-            bitmap = qrgEncoder.getBitmap();
-            // the bitmap is set inside our image
-            // view using .setimagebitmap method.
-            qrCodeIV.setImageBitmap(bitmap);
+            //https://github.com/nayuki/QR-Code-generator/blob/master/java/QrCodeGeneratorDemo.java
+            //https://stackoverflow.com/questions/8800919/how-to-generate-a-qr-code-for-an-android-application/25283174#25283174
+
+            bitmap = Bitmap.createBitmap(25, 25, Bitmap.Config.RGB_565);
+            for (int x = 0; x < 25; x++) {
+                for (int y = 0; y < 25; y++) {
+
+                    bitmap.setPixel(x, y, matrix.get(x,y) ? Color.BLACK : Color.WHITE);
+
+                }
+            }
+            //qrCodeIV.setImageBitmap(bitmap);
+            qrCodeIV.setImageBitmap(Bitmap.createScaledBitmap(bitmap, 256, 256, false));
         }
         catch (Exception e) {
             // this method is called for
@@ -403,19 +417,19 @@ public class MainActivity extends AppCompatActivity {
             StringBuilder playStringBuilder = new StringBuilder();
             playStringBuilder.append(prefixString);
             for (int y = 0; y < 10; y++) {
-                playStringBuilder.append(pickStrings.get(y));
+                playStringBuilder.append(pickStrings.get(y).trim());
                 pickStrings.remove(y);
             }
-            playStrings.add(playStringBuilder.toString());
+            playStrings.add(playStringBuilder.toString().trim());
         }
         if (pickStrings.size() % 10 != 0) {
             StringBuilder playStringBuilder = new StringBuilder();
             playStringBuilder.append(prefixString);
             for (int y = 0; y < pickStrings.size(); y++) {
-                playStringBuilder.append(pickStrings.get(y));
+                playStringBuilder.append(pickStrings.get(y).trim());
                 pickStrings.remove(y);
             }
-            playStrings.add(playStringBuilder.toString());
+            playStrings.add(playStringBuilder.toString().trim());
         }
     }
 }
