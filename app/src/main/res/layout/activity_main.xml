@@ -117,7 +117,7 @@
         android:id="@+id/idIVQrcode"
         android:layout_width="256dp"
         android:layout_height="256dp"
-        android:scaleType="fitCenter"
+        android:scaleType="fitXY"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.896"

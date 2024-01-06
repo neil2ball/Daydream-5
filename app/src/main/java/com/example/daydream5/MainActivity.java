@@ -21,7 +21,6 @@ import android.view.View;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -50,11 +49,18 @@ public class MainActivity extends AppCompatActivity {
     private EditText dataEdtPlays;
 
     List<List<Byte[]>> fantasy5Numbers = new ArrayList<>();
+    List<Byte[]> pickBytes = new ArrayList<>();
+
+    List<List<Byte[]>> paperPlayslipLists = new ArrayList<>();
     List<Byte> numbersList = new ArrayList<>();
     List<List<Boolean>> pickTrackerList = new ArrayList<>();
     List<String> pickStrings = new ArrayList<>();
     String prefixString;
     List<String> playStrings = new ArrayList<>();
+
+    int dayAmount = 1;
+    int playAmount = 1;
+    private boolean qrCodeFlag = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -88,9 +94,6 @@ public class MainActivity extends AppCompatActivity {
                 createPickTracker(pickTrackerList);
 
                 fantasy5Numbers = csvReader("file.csv");
-
-                int dayAmount = 1;
-                int playAmount = 1;
 
                 try {
                     if (TextUtils.isEmpty(dataEdtDays.getText().toString()) || TextUtils.isEmpty(dataEdtPlays.getText().toString())) {
@@ -126,48 +129,80 @@ public class MainActivity extends AppCompatActivity {
                     playAmount = 1;
                 }
 
-                StringBuilder pickPrefix = new StringBuilder();
+                if (qrCodeFlag) {
+                    StringBuilder pickPrefix = new StringBuilder();
 
-                pickPrefix.append("lot40:WFD");
+                    pickPrefix.append("lot40:WFD");
 
-                pickPrefix.append(String.format(Locale.US, "%02d", dayAmount));
+                    pickPrefix.append(String.format(Locale.US, "%02d", dayAmount));
 
-                pickPrefix.append("T");
+                    pickPrefix.append("T");
 
-                if (middayRadBtn.isChecked()) {
-                    pickPrefix.append("M");
-                }
-                else if (eveningRadBtn.isChecked()) {
+                    if (middayRadBtn.isChecked()) {
+                        pickPrefix.append("M");
+                    }
+                    else if (eveningRadBtn.isChecked()) {
+                        pickPrefix.append("E");
+                    }
+                    else if (bothRadBtn.isChecked()) {
+                        pickPrefix.append("B");
+                    }
+
                     pickPrefix.append("E");
-                }
-                else if (bothRadBtn.isChecked()) {
-                    pickPrefix.append("B");
-                }
 
-                pickPrefix.append("E");
+                    if (ezMatchSwitch.isChecked()) {
+                        pickPrefix.append("Y");
+                    }
+                    else {
+                        pickPrefix.append("N");
+                    }
 
-                if (ezMatchSwitch.isChecked()) {
-                    pickPrefix.append("Y");
+                    pickPrefix.append("S");
+
+                    prefixString = pickPrefix.toString();
+
+                    sortPicks(playAmount);
+
+                    qrStringMaker();
+
+                    try {
+                        qrMaker(qrCodeIV, playStrings.get(0));
+                    } catch (UnsupportedEncodingException e) {
+                        throw new RuntimeException(e);
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
                 }
                 else {
-                    pickPrefix.append("N");
+
+                    if (dayAmount > 30) {
+                        dayAmount = 30;
+                    }
+                    else if (dayAmount > 28) {
+                        dayAmount = 28;
+                    }
+                    else if (dayAmount > 21) {
+                        dayAmount = 21;
+                    }
+                    else if (dayAmount > 14) {
+                        dayAmount = 14;
+                    }
+                    else if (dayAmount > 10) {
+                        dayAmount = 10;
+                    }
+                    else if (dayAmount > 7) {
+                        dayAmount = 7;
+                    }
+                    else if (dayAmount > 5) {
+                        dayAmount = 5;
+                    }
+
+                    sortPicks(playAmount);
+                    paperPlayslipListsMaker();
+                    paperPlayslipMaker();
+
                 }
 
-                pickPrefix.append("S");
-
-                prefixString = pickPrefix.toString();
-
-                sortPicks(playAmount);
-
-                qrStringMaker();
-
-                try {
-                    qrMaker(qrCodeIV, playStrings.get(0));
-                } catch (UnsupportedEncodingException e) {
-                    throw new RuntimeException(e);
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
 
             }
         });
@@ -314,18 +349,25 @@ public class MainActivity extends AppCompatActivity {
                                                 pickTrackerListIndex[4] != -1) {
 
                                             try {
-                                                StringBuilder pickString = new StringBuilder(); //We are going to save the strings in a list for use in creating the qr codes.
-                                                //https://stackoverflow.com/questions/48872155/string-concatenation-in-loop
-                                                String pickNumberString;
-                                                for (byte f = 0; f < fantasy5Numbers.get(w).get(x).length; f++) {
-                                                    pickNumberString = String.format(Locale.US, "%02d", fantasy5Numbers.get(w).get(x)[f]).trim(); //We need to make the bytes two digits no matter what.
-                                                    //We start with bytes to attempt to save memory.
 
-                                                    pickString.append(pickNumberString.trim()); //append the values as a string
+                                                if (qrCodeFlag) {
+                                                    StringBuilder pickString = new StringBuilder(); //We are going to save the strings in a list for use in creating the qr codes.
+                                                    //https://stackoverflow.com/questions/48872155/string-concatenation-in-loop
+                                                    String pickNumberString;
+                                                    for (byte f = 0; f < fantasy5Numbers.get(w).get(x).length; f++) {
+                                                        pickNumberString = String.format(Locale.US, "%02d", fantasy5Numbers.get(w).get(x)[f]); //We need to make the bytes two digits no matter what.
+                                                        //We start with bytes to attempt to save memory.
 
+                                                        pickString.append(pickNumberString); //append the values as a string
+
+                                                    }
+
+                                                    pickStrings.add(pickString.toString()); //add the string of the numbers in the pick to the list of picks
+                                                }
+                                                else {
+                                                    pickBytes.add(fantasy5Numbers.get(w).get(x));
                                                 }
 
-                                                pickStrings.add(pickString.toString()); //add the string of the numbers in the pick to the list of picks
                                                 fantasy5Numbers.get(w).remove(x); //remove the pick from the list of picks. This is how we keep track of when to stop using the lists.
                                                 playCount--;
                                                 if (fantasy5Numbers.get(w).size() == 0) {
@@ -416,20 +458,342 @@ public class MainActivity extends AppCompatActivity {
         for (int x = 0; x < pickStringsPlayslipCount; x++) {
             StringBuilder playStringBuilder = new StringBuilder();
             playStringBuilder.append(prefixString);
+
             for (int y = 0; y < 10; y++) {
-                playStringBuilder.append(pickStrings.get(y).trim());
+                playStringBuilder.append(pickStrings.get(y));
+            }
+
+            for (int y = 0; y < 10; y++) {
                 pickStrings.remove(y);
             }
-            playStrings.add(playStringBuilder.toString().trim());
+            playStrings.add(playStringBuilder.toString());
         }
         if (pickStrings.size() % 10 != 0) {
             StringBuilder playStringBuilder = new StringBuilder();
             playStringBuilder.append(prefixString);
+
             for (int y = 0; y < pickStrings.size(); y++) {
-                playStringBuilder.append(pickStrings.get(y).trim());
+                playStringBuilder.append(pickStrings.get(y));
+            }
+
+            for (int y = 0; y < pickStrings.size(); y++) {
                 pickStrings.remove(y);
             }
-            playStrings.add(playStringBuilder.toString().trim());
+            playStrings.add(playStringBuilder.toString());
         }
+    }
+
+    protected void paperPlayslipMaker () {
+
+        BitMatrix bitmapMatrix = new BitMatrix(816, 312);
+        bitmapMatrix.clear();
+
+        if (dayAmount == 30) {
+            bitmapMatrix = blackSquare(bitmapMatrix, 495, 9);
+        }
+        else if (dayAmount == 28) {
+            bitmapMatrix = blackSquare(bitmapMatrix, 478, 9);
+        }
+        else if (dayAmount == 21) {
+            bitmapMatrix = blackSquare(bitmapMatrix, 461, 9);
+        }
+        else if (dayAmount == 14) {
+            bitmapMatrix = blackSquare(bitmapMatrix, 444, 9);
+        }
+        else if (dayAmount == 10) {
+            bitmapMatrix = blackSquare(bitmapMatrix, 427, 9);
+        }
+        else if (dayAmount == 7) {
+            bitmapMatrix = blackSquare(bitmapMatrix, 410, 9);
+        }
+        else if (dayAmount == 5) {
+            bitmapMatrix = blackSquare(bitmapMatrix, 393, 9);
+        }
+        else if (dayAmount == 4) {
+            bitmapMatrix = blackSquare(bitmapMatrix, 375, 9);
+        }
+        else if (dayAmount == 3) {
+            bitmapMatrix = blackSquare(bitmapMatrix, 358, 9);
+        }
+        else if (dayAmount == 2) {
+            bitmapMatrix = blackSquare(bitmapMatrix, 341, 9);
+        }
+
+        if (middayRadBtn.isChecked()) {
+            bitmapMatrix = blackSquare(bitmapMatrix, 100, 44);
+        }
+        else if (eveningRadBtn.isChecked()) {
+            bitmapMatrix = blackSquare(bitmapMatrix, 100, 61);
+        }
+        else if (bothRadBtn.isChecked()) {
+            bitmapMatrix = blackSquare(bitmapMatrix, 100, 78);
+        }
+
+        bitmapMatrix = paperPlayslipFill(bitmapMatrix);
+
+        bitmap = Bitmap.createBitmap(816, 312, Bitmap.Config.RGB_565);
+
+        for (int x = 0; x < 816; x++) {
+            for (int y = 0; y < 312; y++) {
+
+                bitmap.setPixel(x, y, bitmapMatrix.get(x,y) ? Color.BLACK : Color.WHITE);
+
+            }
+        }
+
+        qrCodeIV.setImageBitmap(Bitmap.createScaledBitmap(bitmap, 204, 78, false));
+    }
+
+    protected BitMatrix blackSquare(BitMatrix bitmap, int startX, int startY) {
+
+        int endX = startX + 13;
+        int endY = startY + 13;
+
+        bitmap.setRegion(startX, startY, 13, 13);
+
+        return bitmap;
+    }
+
+    protected void paperPlayslipListsMaker () {
+
+        int pickBytesPlayslipCount = pickBytes.size() / 10;
+        for (int x = 0; x < pickBytesPlayslipCount; x++) {
+            List<Byte[]> paperPlayslipBytes = new ArrayList<>();
+
+            for (int y = 0; y < 10; y++) {
+                paperPlayslipBytes.add(pickBytes.get(y));
+            }
+
+            for (int y = 0; y < 10; y++) {
+                pickBytes.remove(y);
+            }
+            paperPlayslipLists.add(paperPlayslipBytes);
+        }
+        if (pickBytes.size() % 10 != 0) {
+            List<Byte[]> paperPlayslipBytes = new ArrayList<>();
+
+            for (int y = 0; y < pickBytes.size(); y++) {
+                paperPlayslipBytes.add(pickBytes.get(y));
+            }
+
+            for (int y = 0; y < pickBytes.size(); y++) {
+                pickBytes.remove(y);
+            }
+            paperPlayslipLists.add(paperPlayslipBytes);
+        }
+    }
+
+    protected BitMatrix paperPlayslipFill (BitMatrix bitmap) {
+
+        int xIndex = 0;
+        int yIndex = 0;
+
+        if (paperPlayslipLists.size() > 0) {
+            for (byte x = 0; x < paperPlayslipLists.get(0).size(); x++) {
+
+                switch (x) {
+                    case 0:
+                        xIndex = 117;
+                        yIndex = 43;
+                        break;
+                    case 1:
+                        xIndex = 238;
+                        yIndex = 44;
+                        break;
+                    case 2:
+                        xIndex = 358;
+                        yIndex = 43;
+                        break;
+                    case 3:
+                        xIndex = 478;
+                        yIndex = 43;
+                        break;
+                    case 4:
+                        xIndex = 598;
+                        yIndex = 43;
+                        break;
+                    case 5:
+                        xIndex = 117;
+                        yIndex = 181;
+                        break;
+                    case 6:
+                        xIndex = 238;
+                        yIndex = 181;
+                        break;
+                    case 7:
+                        xIndex = 358;
+                        yIndex = 181;
+                        break;
+                    case 8:
+                        xIndex = 478;
+                        yIndex = 181;
+                        break;
+                    case 9:
+                        xIndex = 598;
+                        yIndex = 181;
+                        break;
+
+                }
+
+
+                for (byte y = 0; y < paperPlayslipLists.get(0).get(x).length; y++) {
+
+                    int yPanelIndex = yIndex;
+                    switch (paperPlayslipLists.get(0).get(x)[y]) {
+                        case 1:
+                        case 2:
+                        case 3:
+                        case 4:
+                        case 5:
+                        case 6:
+                            break;
+                        case 7:
+                        case 8:
+                        case 9:
+                        case 10:
+                        case 11:
+                        case 12:
+                            yPanelIndex += 17;
+                            break;
+                        case 13:
+                        case 14:
+                        case 15:
+                        case 16:
+                        case 17:
+                        case 18:
+                            yPanelIndex += 17 * 2;
+                            break;
+                        case 19:
+                        case 20:
+                        case 21:
+                        case 22:
+                        case 23:
+                        case 24:
+                            yPanelIndex += 17 * 3;
+                            break;
+                        case 25:
+                        case 26:
+                        case 27:
+                        case 28:
+                        case 29:
+                        case 30:
+                            yPanelIndex += 17 * 4;
+                            break;
+                        case 31:
+                        case 32:
+                        case 33:
+                        case 34:
+                        case 35:
+                        case 36:
+                            yPanelIndex += 17 * 5;
+                            break;
+                    }
+
+                    int xPanelIndex = xIndex;
+                    switch (paperPlayslipLists.get(0).get(x)[y]) {
+                        case 1:
+                        case 7:
+                        case 13:
+                        case 19:
+                        case 25:
+                        case 31:
+                            break;
+                        case 2:
+                        case 8:
+                        case 14:
+                        case 20:
+                        case 26:
+                        case 32:
+                            xPanelIndex += 17;
+                            break;
+                        case 3:
+                        case 9:
+                        case 15:
+                        case 21:
+                        case 27:
+                        case 33:
+                            xPanelIndex += 17 * 2;
+                            break;
+                        case 4:
+                        case 10:
+                        case 16:
+                        case 22:
+                        case 28:
+                        case 34:
+                            xPanelIndex += 17 * 3;
+                            break;
+                        case 5:
+                        case 11:
+                        case 17:
+                        case 23:
+                        case 29:
+                        case 35:
+                            xPanelIndex += 17 * 4;
+                            break;
+                        case 6:
+                        case 12:
+                        case 18:
+                        case 24:
+                        case 30:
+                        case 36:
+                            xPanelIndex += 17 * 5;
+                            break;
+                    }
+                    bitmap = blackSquare(bitmap, xPanelIndex, yPanelIndex);
+                }
+
+                if (ezMatchSwitch.isChecked()) {
+                    switch (x) {
+                        case 0:
+                            xIndex = 220;
+                            yIndex = 130;
+                            break;
+                        case 1:
+                            xIndex = 341;
+                            yIndex = 130;
+                            break;
+                        case 2:
+                            xIndex = 461;
+                            yIndex = 130;
+                            break;
+                        case 3:
+                            xIndex = 580;
+                            yIndex = 130;
+                            break;
+                        case 4:
+                            xIndex = 700;
+                            yIndex = 130;
+                            break;
+                        case 5:
+                            xIndex = 220;
+                            yIndex = 268;
+                            break;
+                        case 6:
+                            xIndex = 340;
+                            yIndex = 268;
+                            break;
+                        case 7:
+                            xIndex = 461;
+                            yIndex = 268;
+                            break;
+                        case 8:
+                            xIndex = 580;
+                            yIndex = 268;
+                            break;
+                        case 9:
+                            xIndex = 701;
+                            yIndex = 268;
+                            break;
+
+                    }
+
+                    bitmap = blackSquare(bitmap, xIndex, yIndex);
+                }
+            }
+
+            paperPlayslipLists.remove(0);
+        }
+
+        return bitmap;
     }
 }
