@@ -2,7 +2,14 @@ package com.example.daydream5;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.ContentValues;
+import android.media.MediaScannerConnection;
 import android.os.Bundle;
+
+import androidx.print.PrintHelper;
+
+import android.os.Environment;
+import android.provider.MediaStore;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
@@ -19,10 +26,15 @@ import android.util.Log;
 import android.view.View;
 
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 import java.util.Collections;
 import java.util.Locale;
@@ -201,9 +213,15 @@ public class MainActivity extends AppCompatActivity {
                     paperPlayslipListsMaker();
                     paperPlayslipMaker();
 
+                    //PrintHelper printHelper = new PrintHelper(getBaseContext());
+
+                    //printHelper.setScaleMode(PrintHelper.SCALE_MODE_FILL);
+
+                    //printHelper.printBitmap("Print bitmap", bitmap);
+
+                    saveImage(bitmap);
+
                 }
-
-
             }
         });
     }
@@ -546,9 +564,6 @@ public class MainActivity extends AppCompatActivity {
 
     protected BitMatrix blackSquare(BitMatrix bitmap, int startX, int startY) {
 
-        int endX = startX + 13;
-        int endY = startY + 13;
-
         bitmap.setRegion(startX, startY, 13, 13);
 
         return bitmap;
@@ -795,5 +810,45 @@ public class MainActivity extends AppCompatActivity {
         }
 
         return bitmap;
+    }
+
+    //https://stackoverflow.com/questions/77072796/new-android-storage-permission-for-api-13-and-above
+    private void saveImage(Bitmap bitmap) {
+        String root = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).toString();
+        File myDir = new File(root + "/Saved Images");
+
+        if (!myDir.exists()) {
+            myDir.mkdirs();
+        }
+
+        // Generate a unique file name
+        String imageName = "Image_" + new Date().getTime() + ".jpg";
+
+        File file = new File(myDir, imageName);
+        if (file.exists()) file.delete();
+
+        try {
+            // Save the Bitmap to the file
+            OutputStream outputStream;
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                outputStream = Files.newOutputStream(file.toPath());
+            } else {
+                outputStream = new FileOutputStream(file);
+            }
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputStream);
+            outputStream.flush();
+            outputStream.close();
+
+            // Add the image to the MediaStore
+            ContentValues values = new ContentValues();
+            values.put(MediaStore.Images.Media.DATA, file.getAbsolutePath());
+            values.put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg");
+            getApplicationContext().getContentResolver().insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
+
+            // Trigger a media scan to update the gallery
+            MediaScannerConnection.scanFile(getApplicationContext(), new String[]{file.getAbsolutePath()}, null, null);
+        } catch (Exception e) {
+            // TODO
+        }
     }
 }
