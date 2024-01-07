@@ -234,6 +234,11 @@ public class MainActivity extends AppCompatActivity {
                         if (x == paperPlayslipListsSize - 1) {
                             qrCodeIV.setImageBitmap(Bitmap.createScaledBitmap(queueBitmap, 204, 78, false));
                         }
+
+                        if (x % 40 == 0) {
+                            Toast.makeText(MainActivity.this, "Image Count:" + x,
+                                    Toast.LENGTH_SHORT).show();
+                        }
                     }
 
 
@@ -404,6 +409,11 @@ public class MainActivity extends AppCompatActivity {
                                                 fantasy5Numbers.get(w).remove(x); //remove the pick from the list of picks. This is how we keep track of when to stop using the lists.
                                                 playCount--;
 
+                                                if (playCount  % 250 == 0) {
+                                                    Toast.makeText(MainActivity.this, y + " boolTracker " + playCount + " " + boolFlag + " " + pickCount + " " + numbersList.get(y),
+                                                            Toast.LENGTH_SHORT).show();
+                                                }
+
                                                 if (fantasy5Numbers.get(w).size() == 0) {
                                                     fantasy5Numbers.remove(w); //remove one of the four list groups if there are no more numbers in that list.
                                                 }
@@ -443,15 +453,16 @@ public class MainActivity extends AppCompatActivity {
                                     }
                                 }
 
-                                /*if (pickCount % 4000 == 0) {
-                                    Toast.makeText(MainActivity.this, y + " boolTracker " + playCount + " " + boolFlag + " " + pickCount + " " + numbersList.get(y),
-                                            Toast.LENGTH_SHORT).show();
-                                }*/
-
                                 if (boolFlag && pickCount < picksSize) {
                                     pickCount++;
                                 }
                                 else {
+
+                                    if (pickCount % 111111 == 0) {
+                                        Toast.makeText(MainActivity.this, y + " boolTracker " + playCount + " " + boolFlag + " " + pickCount + " " + numbersList.get(y),
+                                                Toast.LENGTH_SHORT).show();
+                                    }
+
                                     List<List<Boolean>> pickTrackerBuffer = new ArrayList<>();
 
                                     createPickTracker(pickTrackerBuffer); //This creates a fresh tracker list.
