@@ -6,8 +6,6 @@ import android.content.ContentValues;
 import android.media.MediaScannerConnection;
 import android.os.Bundle;
 
-import androidx.print.PrintHelper;
-
 import android.os.Environment;
 import android.provider.MediaStore;
 import android.widget.Button;
@@ -24,6 +22,7 @@ import android.text.TextUtils;
 import android.util.Log;
 
 import android.view.View;
+import android.widget.Toast;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -72,6 +71,10 @@ public class MainActivity extends AppCompatActivity {
 
     int dayAmount = 1;
     int playAmount = 1;
+    boolean boolFlag = false;
+    int pickCount = 0;
+    int picksSize = 0;
+
     private boolean qrCodeFlag = false;
 
     @Override
@@ -132,9 +135,10 @@ public class MainActivity extends AppCompatActivity {
                     if (playAmount < 1) {
                         playAmount = 1;
                     }
-                    else if (playAmount > fantasy5Numbers.size()) {
-                        playAmount = fantasy5Numbers.size();
+                    else if (playAmount > fantasy5Numbers.get(0).size() * 4) {
+                        playAmount = fantasy5Numbers.get(0).size() * 4;
                     }
+
                 }
                 catch (Exception e) {
                     dayAmount = 1;
@@ -179,9 +183,8 @@ public class MainActivity extends AppCompatActivity {
 
                     try {
                         qrMaker(qrCodeIV, playStrings.get(0));
-                    } catch (UnsupportedEncodingException e) {
-                        throw new RuntimeException(e);
-                    } catch (Exception e) {
+                    }
+                    catch (Exception e) {
                         throw new RuntimeException(e);
                     }
                 }
@@ -209,17 +212,31 @@ public class MainActivity extends AppCompatActivity {
                         dayAmount = 5;
                     }
 
+                    Toast.makeText(MainActivity.this, "Sort Picks Begin",
+                            Toast.LENGTH_SHORT).show();
                     sortPicks(playAmount);
+                    Toast.makeText(MainActivity.this, String.valueOf(pickBytes.size()),
+                            Toast.LENGTH_LONG).show();
+
                     paperPlayslipListsMaker();
-                    paperPlayslipMaker();
 
-                    //PrintHelper printHelper = new PrintHelper(getBaseContext());
+                    long dateFolderName = new Date().getTime();
+                    int paperPlayslipListsSize =paperPlayslipLists.size();
+                    for (int x = 0; x < paperPlayslipListsSize; x++) {
 
-                    //printHelper.setScaleMode(PrintHelper.SCALE_MODE_FILL);
+                        BitMatrix bitmapMatrix = new BitMatrix(816, 312);
+                        bitmapMatrix.clear();
 
-                    //printHelper.printBitmap("Print bitmap", bitmap);
+                        Bitmap queueBitmap = paperPlayslipMaker(bitmapMatrix);
 
-                    saveImage(bitmap);
+                        saveImage(queueBitmap, String.valueOf(dateFolderName));
+
+                        if (x == paperPlayslipListsSize - 1) {
+                            qrCodeIV.setImageBitmap(Bitmap.createScaledBitmap(queueBitmap, 204, 78, false));
+                        }
+                    }
+
+
 
                 }
             }
@@ -307,19 +324,17 @@ public class MainActivity extends AppCompatActivity {
 
         List<Boolean> pickTracker = Arrays.asList(pickFlag);
 
-        for(byte x = 0; x < 5; x++) {
+        for(byte x = 0; x < 6; x++) {
             pickTrackerList.add(pickTracker);
         }
     }
 
     protected void sortPicks (int playCount) {
-
         while (fantasy5Numbers.size() > 0 && playCount > 0) {
             for (byte w = 0; w < fantasy5Numbers.size(); w++) { //maximum of 4 lists. We rotate through these lists to evenly distribute the picks among the colored groupings.
                 if (playCount > 0) {
                     boolean breakFlag = false; //we must break out of the nested loops when we make a pick.
                     for (int x = 0; x < fantasy5Numbers.get(w).size(); x++) { //maximum 26244 picks per list
-
                         for (byte y = 0; y < pickTrackerList.get(0).size(); y++) { //maximum 36 numbers; tracks whether a specific number was used (in the first [of five] lists)
                             if (pickTrackerList.get(0).get(y)) { //Use the first list to find what numbers we have not used yet; the attempt is to create a lottery wheel.
                                 for (byte z = 0; z < fantasy5Numbers.get(w).get(x).length; z++) { //max of 5 numbers per pick
@@ -359,7 +374,7 @@ public class MainActivity extends AppCompatActivity {
                                             }
                                         }
 
-                                        //If none of the numbers are used five times already
+                                        //If none of the numbers are used six times already
                                         if (pickTrackerListIndex[0] != -1 &&
                                                 pickTrackerListIndex[1] != -1 &&
                                                 pickTrackerListIndex[2] != -1 &&
@@ -388,6 +403,7 @@ public class MainActivity extends AppCompatActivity {
 
                                                 fantasy5Numbers.get(w).remove(x); //remove the pick from the list of picks. This is how we keep track of when to stop using the lists.
                                                 playCount--;
+
                                                 if (fantasy5Numbers.get(w).size() == 0) {
                                                     fantasy5Numbers.remove(w); //remove one of the four list groups if there are no more numbers in that list.
                                                 }
@@ -398,32 +414,62 @@ public class MainActivity extends AppCompatActivity {
 
                                                 breakFlag = true;
 
-                                                break; //break out of this loop so that we can break out of the outer loops.
+                                                break;
+
                                             } catch (Exception e) {
                                                 Log.e("sortPicks", e.toString());
                                             }
                                         }
                                     }
                                 }
-
                                 if (breakFlag) {
-                                    break; //break out of this loop so that we can break out of the outer loop.
+                                    break;
                                 }
-                            } else if (y == pickTrackerList.get(0).size() - 1) { //This is used when there are no remaining picks in the first pick tracker list.
-                                List<List<Boolean>> pickTrackerBuffer = new ArrayList<>();
+                            }
+                            if (y == pickTrackerList.get(0).size() - 1) { //This is used when there are possibly no remaining picks in the first pick tracker list.
 
-                                createPickTracker(pickTrackerBuffer); //This creates a fresh tracker list.
-
-                                for (byte i = 0; i < pickTrackerList.size() - 1; i++) {
-                                    pickTrackerBuffer.set(i, pickTrackerList.get(i + 1)); //set the values of pickTrackerBuffer to the values of PickTrackerList of the remaining lists.
+                                if (pickCount == 0) {
+                                    for (byte z = 0; z < pickTrackerList.get(0).size(); z++) {
+                                        if (pickTrackerList.get(0).get(z)) {
+                                            boolFlag = true;
+                                            break;
+                                        }
+                                    }
                                 }
 
-                                pickTrackerList = pickTrackerBuffer; //replace pickTrackerList with pickTrackerBuffer. This places lists 1,2,3,4 in lists 0,1,2,3 leaving all of the new 4 true.
+                                if (picksSize == 0) {
+                                    for (byte a = 0; a < fantasy5Numbers.size(); a++) {
+                                        picksSize += fantasy5Numbers.get(a).size();
+                                    }
+                                }
+
+                                /*if (pickCount % 4000 == 0) {
+                                    Toast.makeText(MainActivity.this, y + " boolTracker " + playCount + " " + boolFlag + " " + pickCount + " " + numbersList.get(y),
+                                            Toast.LENGTH_SHORT).show();
+                                }*/
+
+                                if (boolFlag && pickCount < picksSize) {
+                                    pickCount++;
+                                }
+                                else {
+                                    List<List<Boolean>> pickTrackerBuffer = new ArrayList<>();
+
+                                    createPickTracker(pickTrackerBuffer); //This creates a fresh tracker list.
+
+                                    for (byte i = 0; i < pickTrackerList.size() - 1; i++) {
+                                        pickTrackerBuffer.set(i, pickTrackerList.get(i + 1)); //set the values of pickTrackerBuffer to the values of PickTrackerList of the remaining lists.
+                                    }
+
+                                    pickTrackerList = pickTrackerBuffer; //replace pickTrackerList with pickTrackerBuffer. This places lists 1,2,3,4 in lists 0,1,2,3 leaving all of the new 4 true.
+                                    boolFlag = false;
+                                    pickCount = 0;
+                                    picksSize = 0;
+                                }
+
                             }
                         }
-
                         if (breakFlag) {
-                            break; //break out of this loop so that we can move on to the next list.
+                            break;
                         }
                     }
                 }
@@ -433,6 +479,8 @@ public class MainActivity extends AppCompatActivity {
             }
         }
         fantasy5Numbers.clear();
+
+
     }
 
     protected void qrMaker (ImageView qrCodeIV, String dataEdt) throws UnsupportedEncodingException, WriterException {
@@ -501,11 +549,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    protected void paperPlayslipMaker () {
-
-        BitMatrix bitmapMatrix = new BitMatrix(816, 312);
-        bitmapMatrix.clear();
-
+    protected Bitmap paperPlayslipMaker (BitMatrix bitmapMatrix) {
         if (dayAmount == 30) {
             bitmapMatrix = blackSquare(bitmapMatrix, 495, 9);
         }
@@ -549,7 +593,7 @@ public class MainActivity extends AppCompatActivity {
 
         bitmapMatrix = paperPlayslipFill(bitmapMatrix);
 
-        bitmap = Bitmap.createBitmap(816, 312, Bitmap.Config.RGB_565);
+        Bitmap bitmap = Bitmap.createBitmap(816, 312, Bitmap.Config.RGB_565);
 
         for (int x = 0; x < 816; x++) {
             for (int y = 0; y < 312; y++) {
@@ -558,8 +602,7 @@ public class MainActivity extends AppCompatActivity {
 
             }
         }
-
-        qrCodeIV.setImageBitmap(Bitmap.createScaledBitmap(bitmap, 204, 78, false));
+        return bitmap;
     }
 
     protected BitMatrix blackSquare(BitMatrix bitmap, int startX, int startY) {
@@ -572,6 +615,7 @@ public class MainActivity extends AppCompatActivity {
     protected void paperPlayslipListsMaker () {
 
         int pickBytesPlayslipCount = pickBytes.size() / 10;
+
         for (int x = 0; x < pickBytesPlayslipCount; x++) {
             List<Byte[]> paperPlayslipBytes = new ArrayList<>();
 
@@ -579,9 +623,10 @@ public class MainActivity extends AppCompatActivity {
                 paperPlayslipBytes.add(pickBytes.get(y));
             }
 
-            for (int y = 0; y < 10; y++) {
-                pickBytes.remove(y);
+            for (int z = 0; z < 10; z++) {
+                pickBytes.remove(0);
             }
+
             paperPlayslipLists.add(paperPlayslipBytes);
         }
         if (pickBytes.size() % 10 != 0) {
@@ -591,14 +636,16 @@ public class MainActivity extends AppCompatActivity {
                 paperPlayslipBytes.add(pickBytes.get(y));
             }
 
-            for (int y = 0; y < pickBytes.size(); y++) {
-                pickBytes.remove(y);
+            for (int z = 0; z < pickBytes.size(); z++) {
+                pickBytes.remove(0);
             }
+
             paperPlayslipLists.add(paperPlayslipBytes);
         }
+
     }
 
-    protected BitMatrix paperPlayslipFill (BitMatrix bitmap) {
+    protected BitMatrix paperPlayslipFill (BitMatrix bitmapMatrix) {
 
         int xIndex = 0;
         int yIndex = 0;
@@ -649,7 +696,6 @@ public class MainActivity extends AppCompatActivity {
                         break;
 
                 }
-
 
                 for (byte y = 0; y < paperPlayslipLists.get(0).get(x).length; y++) {
 
@@ -754,7 +800,7 @@ public class MainActivity extends AppCompatActivity {
                             xPanelIndex += 17 * 5;
                             break;
                     }
-                    bitmap = blackSquare(bitmap, xPanelIndex, yPanelIndex);
+                    bitmapMatrix = blackSquare(bitmapMatrix, xPanelIndex, yPanelIndex);
                 }
 
                 if (ezMatchSwitch.isChecked()) {
@@ -802,27 +848,27 @@ public class MainActivity extends AppCompatActivity {
 
                     }
 
-                    bitmap = blackSquare(bitmap, xIndex, yIndex);
+                    bitmapMatrix = blackSquare(bitmapMatrix, xIndex, yIndex);
                 }
             }
 
             paperPlayslipLists.remove(0);
         }
 
-        return bitmap;
+        return bitmapMatrix;
     }
 
     //https://stackoverflow.com/questions/77072796/new-android-storage-permission-for-api-13-and-above
-    private void saveImage(Bitmap bitmap) {
+    private void saveImage(Bitmap bitmap, String folderName) {
         String root = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).toString();
-        File myDir = new File(root + "/Saved Images");
+        File myDir = new File(root + "/Daydream5_" + folderName);
 
         if (!myDir.exists()) {
             myDir.mkdirs();
         }
 
         // Generate a unique file name
-        String imageName = "Image_" + new Date().getTime() + ".jpg";
+        String imageName = "Playslip_" + new Date().getTime() + ".jpg";
 
         File file = new File(myDir, imageName);
         if (file.exists()) file.delete();
@@ -830,11 +876,8 @@ public class MainActivity extends AppCompatActivity {
         try {
             // Save the Bitmap to the file
             OutputStream outputStream;
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-                outputStream = Files.newOutputStream(file.toPath());
-            } else {
-                outputStream = new FileOutputStream(file);
-            }
+            outputStream = Files.newOutputStream(file.toPath());
+
             bitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputStream);
             outputStream.flush();
             outputStream.close();
