@@ -64,13 +64,14 @@
             android:id="@+id/radioButtonEvening"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:checked="true"
+            android:checked="false"
             android:text="Evening" />
 
         <RadioButton
             android:id="@+id/radioButtonBoth"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:checked="true"
             android:text="Both" />
     </RadioGroup>
 
@@ -105,13 +106,13 @@
         android:id="@+id/idBtnGenerateQR"
         android:layout_width="120dp"
         android:layout_height="75dp"
-        android:text="Generate QR Codes"
+        android:text="Generate Playslips"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintHorizontal_bias="0.027"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/editTextNumberPlays"
-        app:layout_constraintVertical_bias="0.011" />
+        app:layout_constraintVertical_bias="0.037" />
 
     <ImageView
         android:id="@+id/idIVQrcode"
@@ -124,6 +125,29 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/editTextNumberPlays"
         app:layout_constraintVertical_bias="0.096"
-        app:srcCompat="@color/black" />
+        app:srcCompat="@drawable/daydream5"
+        tools:srcCompat="@drawable/daydream5" />
+
+    <TextView
+        android:id="@+id/eudaimonTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/eudaimonEnterprises"
+        app:layout_constraintBottom_toTopOf="@+id/sourceTextView"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/idIVQrcode"
+        app:layout_constraintVertical_bias="0.591" />
+
+    <TextView
+        android:id="@+id/sourceTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="28dp"
+        android:text="@string/sourceCodeGithub"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.485"
+        app:layout_constraintStart_toStartOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

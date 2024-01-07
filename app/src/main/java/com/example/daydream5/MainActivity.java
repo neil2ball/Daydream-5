@@ -8,6 +8,7 @@ import android.os.Bundle;
 
 import android.os.Environment;
 import android.provider.MediaStore;
+import android.text.method.LinkMovementMethod;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
@@ -22,6 +23,7 @@ import android.text.TextUtils;
 import android.util.Log;
 
 import android.view.View;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.BufferedReader;
@@ -77,6 +79,10 @@ public class MainActivity extends AppCompatActivity {
 
     private boolean qrCodeFlag = false;
 
+    TextView eudaimonTextView;
+
+    TextView sourceTextView;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -98,11 +104,22 @@ public class MainActivity extends AppCompatActivity {
 
         dataEdtPlays = findViewById(R.id.editTextNumberPlays);
 
+        eudaimonTextView = findViewById(R.id.eudaimonTextView);
+
+        sourceTextView = findViewById(R.id.sourceTextView);
+
+        eudaimonTextView.setMovementMethod(LinkMovementMethod.getInstance());
+        sourceTextView.setMovementMethod(LinkMovementMethod.getInstance());
+
         //https://www.geeksforgeeks.org/how-to-generate-qr-code-in-android/
         // initializing onclick listener for button.
         generateQrBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                generateQrBtn.setEnabled(false);
+
+                Toast.makeText(MainActivity.this, "Please wait...",
+                        Toast.LENGTH_SHORT).show();
 
                 numbersList = shuffleByteList();
 
@@ -215,8 +232,6 @@ public class MainActivity extends AppCompatActivity {
                     Toast.makeText(MainActivity.this, "Sort Picks Begin",
                             Toast.LENGTH_SHORT).show();
                     sortPicks(playAmount);
-                    Toast.makeText(MainActivity.this, String.valueOf(pickBytes.size()),
-                            Toast.LENGTH_LONG).show();
 
                     paperPlayslipListsMaker();
 
@@ -241,7 +256,8 @@ public class MainActivity extends AppCompatActivity {
                         }
                     }
 
-
+                    Toast.makeText(MainActivity.this, "Done! Check Pictures folder for  /Daydream5_" + dateFolderName,
+                            Toast.LENGTH_LONG).show();
 
                 }
             }
@@ -409,7 +425,7 @@ public class MainActivity extends AppCompatActivity {
                                                 fantasy5Numbers.get(w).remove(x); //remove the pick from the list of picks. This is how we keep track of when to stop using the lists.
                                                 playCount--;
 
-                                                if (playCount  % 250 == 0) {
+                                                if (playCount > 100 && playCount  % 250 == 0) {
                                                     Toast.makeText(MainActivity.this, y + " boolTracker " + playCount + " " + boolFlag + " " + pickCount + " " + numbersList.get(y),
                                                             Toast.LENGTH_SHORT).show();
                                                 }
@@ -458,7 +474,7 @@ public class MainActivity extends AppCompatActivity {
                                 }
                                 else {
 
-                                    if (pickCount % 111111 == 0) {
+                                    if (playCount > 100 && pickCount % 111111 == 0) {
                                         Toast.makeText(MainActivity.this, y + " boolTracker " + playCount + " " + boolFlag + " " + pickCount + " " + numbersList.get(y),
                                                 Toast.LENGTH_SHORT).show();
                                     }
