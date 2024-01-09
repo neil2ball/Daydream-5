@@ -1,4 +1,4 @@
-package com.example.daydream5;
+package com.eudaimon.daydream5;
 
 import android.content.Context;
 

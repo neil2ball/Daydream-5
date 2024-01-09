@@ -1,4 +1,4 @@
-package com.example.daydream5;
+package com.eudaimon.daydream5;
 
 import org.junit.Test;
 

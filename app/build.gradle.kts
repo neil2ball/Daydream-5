@@ -3,11 +3,11 @@ plugins {
 }
 
 android {
-    namespace = "com.example.daydream5"
+    namespace = "com.eudaimon.daydream5"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.example.daydream5"
+        applicationId = "com.eudaimon.daydream5"
         minSdk = 33
         targetSdk = 34
         versionCode = 1
