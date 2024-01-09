@@ -19,3 +19,7 @@ Printing in landscape works best.
 Despite minor alignment concerns, the printed test playslips were successfully used to purchase tickets.
 
 On my phone, it takes about 1 minute to sort 1000 picks. all 104,976 picks took roughly over an hour.
+
+References
+https://www.semanticscholar.org/paper/THE-GEOMETRY-OF-CHANCE-%3A-LOTTO-NUMBERS-FOLLOW-A-Gianella/199ea1e7a8cb2aaeec7ab878687ceec569c76819
+https://medium.com/@edvin.hiltner/how-to-win-fantasy-5-according-to-math-f3a511a4e0a6
